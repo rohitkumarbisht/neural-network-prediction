@@ -1,0 +1,6 @@
+/venv
+/.vscode
+*.pkl
+*.txt
+!requirements.txt
+*.png

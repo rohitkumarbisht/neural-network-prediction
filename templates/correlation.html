@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="{{url_for('static', filename='../static/style.css')}}">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <title>Predictive Analytics</title>
+    </head>
+    <body>
+        <h2>Correlation </h2>
+        <div class="correlation-data">
+            {% if col_no %}
+                <p>
+                    {% for col  in col_no %}
+                        <b>{{col}},</b>
+                    {% endfor %} have <b>no correlation</b> with {{selected_column}}
+                </p>
+            {% endif %}
+
+            {% if col_cor %}
+                <p>
+                    {% for col  in col_cor %}
+                        <b>{{col}},</b>
+                    {% endfor %} have a <b> Correlation</b> with {{selected_column}}
+                </p>
+            {% endif %}
+                <br>
+            <p> The parameters having no correlation with {{selected_column}} will be dropeed at the time of training</p>
+        </div>
+
+        <h2>Correlation Graph</h2>
+            <div class="graph-container">
+                <img class="correlation-graph" src="{{ url_for('static', filename='../static/images/correlation_graph.png') }}" alt="correlation Graph">
+            </div>
+        
+        <div>
+            
+            <button id="correlation_screen" class="custom-button" value="train model" onclick="window.location.href='http://127.0.0.1:5000/training'">
+                Start Training
+            </button>
+        </div>
+    </body>
+</html>
