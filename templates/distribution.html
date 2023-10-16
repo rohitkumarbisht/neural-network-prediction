@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="{{url_for('static', filename='../static/style.css')}}">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <title>Distribution Graph</title>
+    </head>
+<body>
+    <h2>Distribution Graph</h2>
+        <div class="graph-container">
+            <img class="distribution-graph" src="{{ url_for('static', filename='../static/images/distribution.png') }}" alt="Distribution Graph">
+        </div>
+        <h2>Select a column to generate correlation graph</h2>
+        <div class="container">
+            <form method="POST" action="/correlation-graph">
+                <label class="label" for="selected_column">Select a column:</label>
+                <div class="dropdown">
+                    <select id="selected_column" name="selected_column">
+                        <option value="selected_column" disabled selected>
+                            Select a column
+                        </option>
+                    {% for column in columns %}
+                        <option value="{{ column }}" {% if column == selected_column %}selected{% endif %}>
+                            {{ column }}
+                        </option>
+                    {% endfor %}
+                    </select>
+                </div>
+                <input class="correlation-submit" type="submit" value="Show Correlation">
+            </form>
+</body>
+</html>

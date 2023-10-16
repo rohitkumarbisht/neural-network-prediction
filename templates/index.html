@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropout Prediction Home Page</title>
+</head>
+<body>
+    Welcome to Dropout prediction!
+    <button onclick="uploadPath('upload-csv')" >Train</button> 
+    <button onclick="uploadPath('prediction')">Predict</button>
+
+    <script>
+        function uploadPath(value) {
+            // Get the current path from the dropdown value
+            window.location.href = 'http://127.0.0.1:5000/' + value;
+        }
+    </script>
+</body>
+</html>
