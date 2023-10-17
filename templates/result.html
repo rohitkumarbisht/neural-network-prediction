@@ -4,8 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prediction Result</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='../static/result.css')}}">
 </head>
 <body>
-        <p>The students will {{result}}</p>
+        <h2>Prediction Result</h2>
+        <p>The student will {{result}}</p>
+        <button onclick="updatePath('{{path}}')">Go Back</button>
+        <script>
+            function updatePath(path) {
+                // Get the current path from the dropdown value
+                window.location.href = 'http://127.0.0.1:5000/' + path;
+            }
+        </script>
 </body>
 </html>

@@ -8,7 +8,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 
 # To run
-python main.py
+python app.py
 
 # If any new package is installed use the following commanf to save that in requirements.txt
 pip freeze > requirements.txt

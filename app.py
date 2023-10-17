@@ -78,7 +78,7 @@ def correlation_graph():
         correlation_with_Target_sorted = correlation_with_Target.sort_values(ascending=False)
 
         # Plot the histogram
-        plt.figure(figsize=(8, 6))
+        plt.figure(figsize=(10, 6))
         bars = plt.bar(correlation_with_Target_sorted.index, correlation_with_Target_sorted.values)
         plt.xlabel('Columns')
         plt.ylabel(f'Correlation with {selected_column} ')
@@ -104,7 +104,7 @@ def correlation_graph():
             ]
 
         plt.grid(axis='y')
-        plt.savefig('static/images/correlation_graph.png')
+        plt.savefig('static/images/correlation_graph.png', bbox_inches='tight')
         drop_columns = correlation_minus_0_2_to_0_2
         col_cor = correlation_more_than_0_2 + correlation_less_than_minus_0_2
         drop_columns.append(selected_column)
@@ -142,7 +142,7 @@ def prediction_input():
         with open('mpl_model.pkl', 'rb') as file:
             model_pkl = pkl.load(file)
     except FileNotFoundError:
-        error = 'Model file not found, Plese train the model'
+        error = 'Model file not found, Please train the model!'
         return render_template(message,error=error,path='upload-csv') 
     if request.method == 'POST':
         #request the file from the upload
