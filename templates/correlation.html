@@ -1,45 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="{{url_for('static', filename='../static/correlation.css')}}">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-        <title>Predictive Analytics</title>
-    </head>
-    <body>
-        <h2>Correlation </h2>
-        <div class="correlation-data">
-            {% if col_no %}
-                <p>
-                    <b>Columns having no/low correlation with {{selected_column}}:</b>
-                    {% for col  in col_no %}
-                        {{col}},
-                    {% endfor %}
-                </p>
-            {% endif %}
-
-            {% if col_cor %}
-                <p>
-                    <b>Columns having high correlation with {{selected_column}}:</b>
-                    {% for col  in col_cor %}
-                        {{col}},
-                    {% endfor %} 
-                </p>
-            {% endif %}
-            <p>Note:The parameters having no correlation with {{selected_column}} will be dropeed at the time of training.</p>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{url_for('static', filename='../static/correlation.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>Predictive Analytics</title>
+</head>
+<body>
+    <h2>Correlation Analysis</h2>
+    <div class="toggle-graph">
+        <button id="toggleButton" class="toggle-button" onclick="toggleGraph()">
+            <i class="fa fa-caret-down"></i> View Graph
+        </button>
+        <div id="graph-container" class="graph-container hidden">
+            <img class="correlation-graph" src="{{ url_for('static', filename='../static/images/correlation_graph.png') }}" alt="Correlation Graph">
         </div>
+    </div>
+    <!-- <h2>Correlation </h2> -->
+    <div class="correlation-data">
+        {% if col_no %}
+            <p>
+                <b>Columns having no/low correlation with {{selected_column}}:</b>
+                {% for col in col_no %}
+                    {{col}},
+                {% endfor %}
+            </p>
+        {% endif %}
 
-        <h2>Correlation Graph</h2>
-            <!-- <div class="graph-container"> -->
-                <img class="correlation-graph" src="{{ url_for('static', filename='../static/images/correlation_graph.png') }}" alt="correlation Graph">
-            <!-- </div> -->
-        
-        <div>
-            
-            <button id="correlation_screen" class="custom-button" value="train model" onclick="window.location.href='http://127.0.0.1:5000/training'">
-                Start Training
-            </button>
-        </div>
-    </body>
+        {% if col_cor %}
+            <p>
+                <b>Columns having high correlation with {{selected_column}}:</b>
+                {% for col in col_cor %}
+                    {{col}},
+                {% endfor %}
+            </p>
+        {% endif %}
+        <p>Note: The parameters having no correlation with {{selected_column}} will be dropped at the time of training.</p>
+    </div>
+    <div>
+        <button id="correlation_screen" class="custom-button" value="train model" onclick="window.location.href='http://127.0.0.1:5000/training'">
+            Start Training
+        </button>
+    </div>
+    <script>
+        function toggleGraph() {
+            const graphContainer = document.getElementById("graph-container");
+            const toggleButton = document.getElementById("toggleButton");
+
+            if (graphContainer.classList.contains("hidden")) {
+                graphContainer.classList.remove("hidden");
+                toggleButton.innerHTML = '<i class="fa fa-caret-up"></i> Hide Graph';
+            } else {
+                graphContainer.classList.add("hidden");
+                toggleButton.innerHTML = '<i class="fa fa-caret-down"></i> View Graph';
+            }
+        }
+    </script>
+</body>
 </html>

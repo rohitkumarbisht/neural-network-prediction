@@ -68,3 +68,24 @@ select {
 .fa {
     margin-right: 5px;
 }
+
+.toggle-button {
+    color: #0074d9;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.toggle-button:hover {
+    color: #0a4476;
+}
+
+.hidden {
+    display: none;
+}
+
+.toggle-graph {
+    text-align: center;
+    margin: 20px 0;
+}

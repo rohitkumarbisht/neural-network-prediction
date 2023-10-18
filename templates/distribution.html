@@ -9,26 +9,46 @@
     </head>
 <body>
     <h2>Distribution Graph</h2>
-        <div class="graph-container">
+    <div class="toggle-graph">
+        <button id="toggleButton" class="toggle-button" onclick="toggleGraph()">
+            <i class="fa fa-caret-down"></i> View Graph
+        </button>
+        <div id="graph-container" class="graph-container hidden">
             <img class="distribution-graph" src="{{ url_for('static', filename='../static/images/distribution.png') }}" alt="Distribution Graph">
         </div>
-        <h2>Select a column to generate correlation graph</h2>
-        <div class="container">
-            <form method="POST" action="/correlation-graph">
-                <label class="label" for="selected_column">Select a column:</label>
-                <div class="dropdown">
-                    <select id="selected_column" name="selected_column">
-                        <option value="selected_column" disabled selected>
-                            Select a column
-                        </option>
+    </div>
+    <h2>Select a column to generate correlation graph</h2>
+    <div class="container">
+        <form method="POST" action="/correlation-graph">
+            <label class="label" for="selected_column">Select a column:</label>
+            <div class="dropdown">
+                <select id="selected_column" name="selected_column">
+                    <option value="selected_column" disabled selected>
+                        Select a column
+                    </option>
                     {% for column in columns %}
                         <option value="{{ column }}" {% if column == selected_column %}selected{% endif %}>
                             {{ column }}
                         </option>
                     {% endfor %}
-                    </select>
-                </div>
-                <input class="correlation-submit" type="submit" value="Show Correlation">
-            </form>
+                </select>
+            </div>
+            <input class="correlation-submit" type="submit" value="Show Correlation">
+        </form>
+    </div>
+    <script>
+        function toggleGraph() {
+            const graphContainer = document.getElementById("graph-container");
+            const toggleButton = document.getElementById("toggleButton");
+
+            if (graphContainer.classList.contains("hidden")) {
+                graphContainer.classList.remove("hidden");
+                toggleButton.innerHTML = '<i class="fa fa-caret-up"></i> Hide Graph';
+            } else {
+                graphContainer.classList.add("hidden");
+                toggleButton.innerHTML = '<i class="fa fa-caret-down"></i> View Graph';
+            }
+        }
+    </script>
 </body>
 </html>
