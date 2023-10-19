@@ -1,5 +1,6 @@
 from flask import Flask, render_template,request,redirect,url_for
 import pandas as pd
+import time
 import matplotlib.pyplot as plt
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score, StratifiedKFold
@@ -125,15 +126,23 @@ def training_model():
     y = csv_data[selected_column]
     # Perform cross-validation
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    # Train the Random Forest model
+
+    # Start measuring the training time
+    start_time = time.time()
+
+    # Train the Neural Network model
     MPL_model = MLPClassifier(max_iter=20)
     MPL_model.fit(X, y)
     with open('mpl_model.pkl', 'wb') as file:  
         pkl.dump(MPL_model, file)
+    
+    # Calculate the training time
+    end_time = time.time()
+    training_time = end_time - start_time
 
     accuracy = cross_val_score(MPL_model, X, y, cv=cv, scoring='accuracy').mean()
     precision = cross_val_score(MPL_model, X, y, cv=cv, scoring='precision_macro').mean()
-    return render_template('training.html',accuracy=accuracy,precision=precision)
+    return render_template('training.html',accuracy=accuracy,precision=precision,training_time=training_time)
 
 @app.route("/prediction",methods=['GET','POST'])
 def prediction_input():

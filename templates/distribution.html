@@ -23,14 +23,11 @@
             <label class="label" for="selected_column">Select a column:</label>
             <div class="dropdown">
                 <select id="selected_column" name="selected_column">
-                    <option value="selected_column" disabled selected>
-                        Select a column
-                    </option>
                     {% for column in columns %}
-                        <option value="{{ column }}" {% if column == selected_column %}selected{% endif %}>
-                            {{ column }}
-                        </option>
-                    {% endfor %}
+                <option value="{{ column }}" {% if column == 'Target' or column == selected_column %}selected{% endif %}>
+                    {{ column }}
+                </option>
+            {% endfor %}
                 </select>
             </div>
             <input class="correlation-submit" type="submit" value="Show Correlation">
