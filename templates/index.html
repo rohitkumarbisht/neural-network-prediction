@@ -7,10 +7,14 @@
     <link rel="stylesheet" href="{{url_for('static', filename='../static/index.css')}}">
 </head>
 <body>
-    Welcome to Dropout prediction!
+    <h2>Welcome to Dropout prediction!</h2>
+    <br>
+    <label>Train model with updated dataset:</label>
     <button onclick="uploadPath('upload-csv')" >Train</button> 
+    <br>
+    <label>Predict students dropout on the trained model:</label>
     <button onclick="uploadPath('prediction')">Predict</button>
-
+    </div>
     <script>
         function uploadPath(value) {
             // Get the current path from the dropdown value
