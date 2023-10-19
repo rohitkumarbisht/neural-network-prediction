@@ -15,7 +15,7 @@ h2 {
 
 .correlation-data {
     background-color: #fff;
-    margin: 0 auto;
+    margin: 0 80px;
     padding: 20px;
     text-align: initial;
     border-radius: 5px;
@@ -33,8 +33,9 @@ b {
 }
 
 .correlation-graph {
-    max-width: 100%;
+    max-width: 50%;
     height: auto;
+    margin-top: 10px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -58,4 +59,25 @@ b {
 
 .correlation-data p:last-child {
     color: #888;
+}
+
+.toggle-button {
+    color: #0074d9;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.toggle-button:hover {
+    color: #0a4476;
+}
+
+.hidden {
+    display: none;
+}
+
+.toggle-graph {
+    text-align: center;
+    margin: 20px 0;
 }
