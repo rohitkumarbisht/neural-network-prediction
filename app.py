@@ -75,14 +75,14 @@ class DistributionGraph(Resource):
                 # 200 OK
                 return make_response({"message": "Distribution graph generated", "png_path": png_path}, 200)
             else:
-                # If the file does not exist, return a 500 Internal Server Error status code
-                # 500 Internal Server Error
-                return make_response({"error": "Distribution graph not found"}, 500)
+                # If the file does not exist, return a 404 Not Found status code
+                # 404 Not Found
+                return make_response({"error": "Distribution graph not found"}, 404)
 
-        # If no CSV data is available, return a 404 Not Found status code
+        # If no CSV data is available,  return a 403 Forbidden Error status code
         else:
-            # 404 Not Found
-            return make_response({"error": "No CSV data available"}, 404)
+            # 403 Forbidden
+            return make_response({"error": "No CSV data available"}, 403)
 
 
 api.add_resource(DistributionGraph, '/distribution-graph')
@@ -96,7 +96,7 @@ class CorrelationGraph(Resource):
         selected_column = request.form.get("selected_column")
         if not selected_column:
             error = 'No target column was selected'
-            return {"message": error}
+            return {"error": error}
 
         if selected_column:
             correlation_with_Target = csv_data.corr()[selected_column]
@@ -148,8 +148,8 @@ class CorrelationGraph(Resource):
             if os.path.exists(png_path):
                 return make_response({"message": "Correlation graph generated", "png_path": png_path}, 200)
             else:
-                # 500 Internal Server Error
-                return make_response({"error": "Distribution graph not found"}, 500)
+                # 404 Not Found
+                return make_response({"error": "Correlation graph not found"}, 404)
 
 
 api.add_resource(CorrelationGraph, '/correlation-graph')
