@@ -7,9 +7,65 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 import pickle as pkl
 import os
-
+import io
+from flask_swagger_ui import get_swaggerui_blueprint
 app = Flask(__name__)
 api = Api(app)
+import psycopg2
+
+# Define your PostgreSQL database connection settings
+db_host = 'airbyte.cqqg4q5hnscs.ap-south-1.rds.amazonaws.com'
+db_port = 5432
+db_user = 'airbyte'
+db_password = 'F648d&lTHltriVidRa0R'
+db_name = 'learninganalytics'
+schema_name = 'learninganalytics'
+table_name = "dropout_data"
+
+# swagger config
+SWAGGER_URL = '/swagger'
+API_URL = '/static/swagger.json'
+SWAGGER_BLUEPRINT = get_swaggerui_blueprint(
+    SWAGGER_URL, API_URL,
+    config = {
+        'app_name': 'Dropout Prediction'
+    }
+)
+
+app.register_blueprint(SWAGGER_BLUEPRINT, specs_url = SWAGGER_URL)
+
+# connect with the PostgreSQL Server
+def fetch_data_from_postgresql():
+    global df
+    try:
+        conn = psycopg2.connect(
+            host=db_host,
+            port=db_port,
+            user=db_user,
+            password=db_password,
+            database=db_name
+        )
+        cursor = conn.cursor()
+
+        # Fetch all data from the table
+        cursor.execute(f'SELECT * FROM {db_name}.{schema_name}."{table_name}"')
+        data = cursor.fetchall()
+
+        # Get column names from the table
+        cursor.execute(
+            'SELECT column_name FROM information_schema.columns WHERE table_schema = %s AND table_name = %s', (schema_name, table_name,))
+        columns = [col[0] for col in cursor.fetchall()]
+
+        df = pd.DataFrame(data, columns=columns)
+
+        cursor.close()
+        conn.close()
+
+        return df
+
+    except Exception as e:
+        print(f"Error fetching data from PostgreSQL: {str(e)}")
+        return None
 
 # home page
 
@@ -27,13 +83,18 @@ api.add_resource(Home, '/')
 class UploadCSV(Resource):
     def post(self):
         global csv_data
-        file = request.files['file']
+        file = request.get_data()
         if not file:
             return make_response({"error": "No file was uploaded"}, 400)
-        csv_data = pd.read_csv(file)
-        label_mapping = {'Dropout': 0, 'Graduate': 1, 'Enrolled': 2}
-        csv_data['Target'] = csv_data['Target'].map(label_mapping)
-        return {"message": "CSV data uploaded successfully"}
+        try:
+            binary_io_train = io.BytesIO(file)
+            csv_data = pd.read_csv(binary_io_train)
+            label_mapping = {'Dropout': 0, 'Graduate': 1, 'Enrolled': 2}
+            csv_data['Target'] = csv_data['Target'].map(label_mapping)
+            return {"message": "CSV data uploaded successfully"}
+        except pd.errors.ParserError as e:
+            return make_response({"error": f"Error parsing CSV data: {str(e)}"}, 400)
+
 
 
 api.add_resource(UploadCSV, '/upload-csv')
@@ -43,6 +104,15 @@ api.add_resource(UploadCSV, '/upload-csv')
 
 class DistributionGraph(Resource):
     def get(self):
+        csv_data = fetch_data_from_postgresql()
+        csv_data = csv_data.iloc[:-1]
+        csv_data = csv_data.drop('student_id', axis=1)  
+        label_mapping = {
+            'Dropout': 0,
+            'Graduate': 1,
+            'Enrolled': 2
+        }
+        csv_data['target'] = csv_data['target'].map(label_mapping)
         if csv_data is not None:
             # Your distribution graph logic here
             num_columns = len(csv_data.columns)
@@ -82,7 +152,7 @@ class DistributionGraph(Resource):
         # If no CSV data is available,  return a 403 Forbidden Error status code
         else:
             # 403 Forbidden
-            return make_response({"error": "No CSV data available"}, 403)
+            return make_response({"error": "No data available"}, 403)
 
 
 api.add_resource(DistributionGraph, '/distribution-graph')
@@ -91,9 +161,9 @@ api.add_resource(DistributionGraph, '/distribution-graph')
 
 
 class CorrelationGraph(Resource):
-    def get(self):
+    def post(self):
         global actual_columns, selected_column
-        selected_column = request.form.get("selected_column")
+        selected_column = request.args.get("selected_column")
         if not selected_column:
             error = 'No target column was selected'
             return {"error": error}
@@ -195,6 +265,39 @@ api.add_resource(TrainingModel, '/training')
 # Predict
 
 
+class PredictionFileUpload(Resource):
+    def post(self):
+        try:
+            with open('mpl_model.pkl', 'rb') as file:
+                model_pkl = pkl.load(file)
+        except FileNotFoundError:
+            error = 'Model file not found, Please train the model!'
+            return make_response({'error': error}, 404)
+
+        df = request.get_data()
+        if not df:
+            return make_response({"error": "No file was uploaded"}, 400)
+        try:
+            binary_io = io.BytesIO(df)
+            data = pd.read_csv(binary_io) 
+            
+            with open("highly_correlated_columns.txt", "r") as file:
+                actual_columns = file.read().splitlines()
+            pred_X = data[actual_columns]
+
+            y_pred = model_pkl.predict(pred_X)
+            y_pred_series = pd.Series(y_pred)
+            y_pred_string = y_pred_series.apply(
+                lambda x: 'Dropout' if x == 0 else ('Graduate' if x == 1 else 'Enrolled'))
+            y_pred_list = y_pred_string.tolist()
+
+            return make_response({"message": "Prediction completed successfully", 'result': y_pred_list[0]}, 200)
+        except pd.errors.ParserError as e:
+            return make_response({"error": f"Error parsing CSV data: {str(e)}"}, 400)
+
+
+api.add_resource(PredictionFileUpload, '/prediction/multiple-data')
+
 class PredictionInput(Resource):
     def post(self):
         try:
@@ -204,16 +307,31 @@ class PredictionInput(Resource):
             error = 'Model file not found, Please train the model!'
             return make_response({'error': error}, 404)
 
-        df = request.files['file']
-        if not df:
-            return make_response({"error": "No file was uploaded"}, 400)
+        # df = request.files['file']
+        # if not df:
+        #     return make_response({"error": "No file was uploaded"}, 400)
 
         # Read the CSV file for prediction
-        data = pd.read_csv(df)
+        # data = pd.read_csv(df)
 
         with open("highly_correlated_columns.txt", "r") as file:
             actual_columns = file.read().splitlines()
-        pred_X = data[actual_columns]
+
+        # Read input values from the request body as JSON
+        input_data = request.get_json()
+
+        if input_data is None:
+            return make_response({"error": "No input data provided in the request body"}, 400)
+
+        # Ensure that the input data keys match the columns in "highly_correlated_columns.txt"
+        for column in actual_columns:
+            if column not in input_data:
+                return make_response({"error": f"Input data missing for column: {column}"}, 400)
+
+        # Create a DataFrame with input values
+        input_data_df = pd.DataFrame([input_data])
+
+        pred_X = input_data_df[actual_columns]
 
         y_pred = model_pkl.predict(pred_X)
         y_pred_series = pd.Series(y_pred)
@@ -224,7 +342,7 @@ class PredictionInput(Resource):
         return make_response({"message": "Prediction completed successfully", 'result': y_pred_list[0]}, 200)
 
 
-api.add_resource(PredictionInput, '/prediction')
+api.add_resource(PredictionInput, '/prediction/single-data')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
