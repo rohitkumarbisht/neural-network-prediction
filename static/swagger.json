@@ -1,0 +1,239 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Dropout Prediction API",
+      "description": "Api to predict the dropout",
+      "version": "1.0.0"
+    },
+
+    "tags": [
+        {
+            "name": "Dropout API",
+            "description":"Test API"
+        }
+    ],
+    "servers": [
+        {
+            "url":"/"
+        }
+    ],
+
+    "paths": {
+      "/upload-csv": {
+        "post": {
+          "summary": "Upload a CSV file for training data",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "CSV data uploaded successfully"
+            },
+            "400": {
+              "description": "No file was uploaded"
+            }
+          }
+        }
+      },
+      "/distribution-graph": {
+        "get": {
+          "summary": "Get distribution graph",
+          "responses": {
+            "200": {
+              "description": "Distribution graph generated",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string"
+                      },
+                      "png_path": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "403": {
+              "description": "No CSV data available"
+            },
+            "404": {
+              "description": "Distribution graph not found"
+            }
+          }
+        }
+      },
+      "/correlation-graph": {
+        "post": {
+          "summary": "Get correlation graph",
+          "parameters": [
+            {
+              "name": "selected_column",
+              "in": "query",
+              "description": "An example query parameter",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Correlation graph generated",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string"
+                      },
+                      "png_path": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Correlation graph not found"
+            }
+          }
+        }
+      },
+      "/training": {
+        "get": {
+          "summary": "Get training parameters",
+          "responses": {
+            "200": {
+              "description": "Model training completed successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "accuracy": {
+                        "type": "number"
+                      },
+                      "message": {
+                        "type": "string"
+                      },
+                      "precision": {
+                        "type": "number"
+                      },
+                      "training_time": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/prediction/multiple-data": {
+        "post": {
+          "summary": "Predict on the trained model and update the result in the database",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Prediction completed successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string"
+                      },
+                      "result": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+         }
+        }
+      },
+      "/prediction/single-data": {
+        "post": {
+          "summary": "Predict on the trained model and update the result in the database",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json":{
+                "schema":{
+                  "properties":{
+                    "Tuition fees up to date": {
+                      "type":"number"
+                    },
+                    "Age at enrollment": {
+                      "type":"number"
+                    },
+                    "Curricular units 1st sem (approved)":{
+                      "type":"number"
+                    },
+                    "Curricular units 1st sem (grade)":{
+                      "type":"number"
+                    },
+                    "Curricular units 2nd sem (approved)":{
+                      "type":"number"
+                    },
+                    "Curricular units 2nd sem (grade)":{
+                      "type":"number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Prediction completed successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string"
+                      },
+                      "result": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+         }
+        }
+      }
+    }
+  }
+  
