@@ -127,6 +127,10 @@
                       "accuracy": {
                         "type": "number"
                       },
+                      "date_modified":{
+                        "type":"string",
+                        "format":"date"
+                      },
                       "message": {
                         "type": "string"
                       },

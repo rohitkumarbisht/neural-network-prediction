@@ -9,9 +9,13 @@ import pickle as pkl
 import os
 import io
 from flask_swagger_ui import get_swaggerui_blueprint
+import psycopg2
+from datetime import date
+
+
 app = Flask(__name__)
 api = Api(app)
-import psycopg2
+
 
 # Define your PostgreSQL database connection settings
 db_host = 'airbyte.cqqg4q5hnscs.ap-south-1.rds.amazonaws.com'
@@ -21,18 +25,21 @@ db_password = 'F648d&lTHltriVidRa0R'
 db_name = 'learninganalytics'
 schema_name = 'learninganalytics'
 table_name = "dropout_data"
+config_table = "dropout_model_config"
+
 
 # swagger config
 SWAGGER_URL = '/swagger'
 API_URL = '/static/swagger.json'
 SWAGGER_BLUEPRINT = get_swaggerui_blueprint(
     SWAGGER_URL, API_URL,
-    config = {
+    config={
         'app_name': 'Dropout Prediction'
     }
 )
 
-app.register_blueprint(SWAGGER_BLUEPRINT, specs_url = SWAGGER_URL)
+app.register_blueprint(SWAGGER_BLUEPRINT, specs_url=SWAGGER_URL)
+
 
 # connect with the PostgreSQL Server
 def fetch_data_from_postgresql():
@@ -67,9 +74,8 @@ def fetch_data_from_postgresql():
         print(f"Error fetching data from PostgreSQL: {str(e)}")
         return None
 
+
 # home page
-
-
 class Home(Resource):
     def get(self):
         return {"message": "Welcome to the API"}
@@ -77,12 +83,10 @@ class Home(Resource):
 
 api.add_resource(Home, '/')
 
+
 # upload training data
-
-
 class UploadCSV(Resource):
     def post(self):
-        global csv_data
         file = request.get_data()
         if not file:
             return make_response({"error": "No file was uploaded"}, 400)
@@ -91,75 +95,76 @@ class UploadCSV(Resource):
             csv_data = pd.read_csv(binary_io_train)
             label_mapping = {'Dropout': 0, 'Graduate': 1, 'Enrolled': 2}
             csv_data['Target'] = csv_data['Target'].map(label_mapping)
-            return {"message": "CSV data uploaded successfully"}
+            return make_response({"message": "CSV data uploaded successfully"}, 201)
         except pd.errors.ParserError as e:
             return make_response({"error": f"Error parsing CSV data: {str(e)}"}, 400)
 
 
-
 api.add_resource(UploadCSV, '/upload-csv')
 
+
 # Distribution Graph Page
-
-
 class DistributionGraph(Resource):
     def get(self):
+        global csv_data
         csv_data = fetch_data_from_postgresql()
         csv_data = csv_data.iloc[:-1]
-        csv_data = csv_data.drop('student_id', axis=1)  
+        csv_data = csv_data.drop('student_id', axis=1)
         label_mapping = {
             'Dropout': 0,
             'Graduate': 1,
             'Enrolled': 2
         }
         csv_data['target'] = csv_data['target'].map(label_mapping)
-        if csv_data is not None:
-            # Your distribution graph logic here
-            num_columns = len(csv_data.columns)
-            num_rows = (num_columns + 4) // 5
-            num_columns_last_row = num_columns % 5
+        try:
+            if csv_data is not None:
+                # Your distribution graph logic here
+                num_columns = len(csv_data.columns)
+                num_rows = (num_columns + 4) // 5
+                num_columns_last_row = num_columns % 5
 
-            # Create a grid of subplots
-            fig, axes = plt.subplots(
-                nrows=num_rows, ncols=5, figsize=(15, 2 * num_rows))
+                # Create a grid of subplots
+                fig, axes = plt.subplots(
+                    nrows=num_rows, ncols=5, figsize=(15, 2 * num_rows))
 
-            # Plot histograms for each column
-            for i, col in enumerate(csv_data.columns):
-                row_index = i // 5
-                col_index = i % 5
-                ax = axes[row_index, col_index]
-                if i < num_columns:
-                    ax.hist(csv_data[col], bins=10)
-                    ax.set_title(col)
+                # Plot histograms for each column
+                for i, col in enumerate(csv_data.columns):
+                    row_index = i // 5
+                    col_index = i % 5
+                    ax = axes[row_index, col_index]
+                    if i < num_columns:
+                        ax.hist(csv_data[col], bins=10)
+                        ax.set_title(col)
+                    else:
+                        ax.axis('off')
+
+                if num_columns_last_row > 0:
+                    for j in range(num_columns_last_row, 5):
+                        axes[num_rows - 1, j].axis('off')
+                plt.tight_layout()
+                png_path = 'static/images/distribution.png'
+                plt.savefig(png_path)
+                if os.path.exists(png_path):
+                    # Assuming successful processing, return a 200 OK status code
+                    # 200 OK
+                    return make_response({"message": "Distribution graph generated", "png_path": png_path}, 200)
                 else:
-                    ax.axis('off')
+                    # If the file does not exist, return a 404 Not Found status code
+                    # 404 Not Found
+                    return make_response({"error": "Distribution graph not found"}, 404)
 
-            if num_columns_last_row > 0:
-                for j in range(num_columns_last_row, 5):
-                    axes[num_rows - 1, j].axis('off')
-            plt.tight_layout()
-            png_path = 'static/images/distribution.png'
-            plt.savefig(png_path)
-            if os.path.exists(png_path):
-                # Assuming successful processing, return a 200 OK status code
-                # 200 OK
-                return make_response({"message": "Distribution graph generated", "png_path": png_path}, 200)
+            # If no CSV data is available,  return a 403 Forbidden Error status code
             else:
-                # If the file does not exist, return a 404 Not Found status code
-                # 404 Not Found
-                return make_response({"error": "Distribution graph not found"}, 404)
-
-        # If no CSV data is available,  return a 403 Forbidden Error status code
-        else:
-            # 403 Forbidden
-            return make_response({"error": "No data available"}, 403)
+                # 403 Forbidden
+                return make_response({"error": "No data available"}, 403)
+        except Exception as e:
+            return make_response({"error": f"An error occurred: {str(e)}"}, 500)
 
 
 api.add_resource(DistributionGraph, '/distribution-graph')
 
+
 # correlation graph page
-
-
 class CorrelationGraph(Resource):
     def post(self):
         global actual_columns, selected_column
@@ -224,9 +229,8 @@ class CorrelationGraph(Resource):
 
 api.add_resource(CorrelationGraph, '/correlation-graph')
 
+
 # Train the data
-
-
 class TrainingModel(Resource):
     def get(self):
         with open("highly_correlated_columns.txt", "r") as file:
@@ -251,20 +255,47 @@ class TrainingModel(Resource):
         # Calculate the training time
         end_time = time.time()
         training_time = end_time - start_time
+        today = date.today()
+        modified_on = today.isoformat()
 
         accuracy = cross_val_score(
             MPL_model, X, y, cv=cv, scoring='accuracy').mean()
         precision = cross_val_score(
             MPL_model, X, y, cv=cv, scoring='precision_macro').mean()
 
-        return make_response({"message": "Model training completed successfully", 'accuracy': accuracy, 'precision': precision, 'training_time': training_time}, 200)
+        # Save the training results to the PostgreSQL database
+        conn = psycopg2.connect(
+            dbname=db_name, user=db_user, password=db_password, host=db_host, port=db_port
+        )
+
+        cursor = conn.cursor()
+
+        accuracy = accuracy
+        precision = precision
+        training_time = training_time
+        date_modified = modified_on
+        sql = f"INSERT INTO {schema_name}.{config_table} (accuracy, precision, training_time, date_modified) VALUES (%s, %s, %s, %s);"
+
+        try:
+            cursor.execute(sql, (accuracy, precision,
+                           training_time, date_modified))
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            return make_response({"error": f"Failed to save training results to the database {e}"}, 500)
+        finally:
+            cursor.close()
+            conn.close()
+
+        return make_response({"message": "Model training completed successfully", 'accuracy': accuracy, 'precision': precision, 'training_time': training_time, "date_modified": modified_on}, 200)
 
 
 api.add_resource(TrainingModel, '/training')
 
-# Predict
 
+## Predict ##
 
+# Predict multiple records
 class PredictionFileUpload(Resource):
     def post(self):
         try:
@@ -279,8 +310,8 @@ class PredictionFileUpload(Resource):
             return make_response({"error": "No file was uploaded"}, 400)
         try:
             binary_io = io.BytesIO(df)
-            data = pd.read_csv(binary_io) 
-            
+            data = pd.read_csv(binary_io)
+
             with open("highly_correlated_columns.txt", "r") as file:
                 actual_columns = file.read().splitlines()
             pred_X = data[actual_columns]
@@ -298,6 +329,8 @@ class PredictionFileUpload(Resource):
 
 api.add_resource(PredictionFileUpload, '/prediction/multiple-data')
 
+
+# Prredict single record
 class PredictionInput(Resource):
     def post(self):
         try:
@@ -306,13 +339,6 @@ class PredictionInput(Resource):
         except FileNotFoundError:
             error = 'Model file not found, Please train the model!'
             return make_response({'error': error}, 404)
-
-        # df = request.files['file']
-        # if not df:
-        #     return make_response({"error": "No file was uploaded"}, 400)
-
-        # Read the CSV file for prediction
-        # data = pd.read_csv(df)
 
         with open("highly_correlated_columns.txt", "r") as file:
             actual_columns = file.read().splitlines()
