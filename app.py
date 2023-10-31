@@ -330,7 +330,7 @@ class PredictionFileUpload(Resource):
 
             return make_response({"message": "Prediction completed successfully", 'result': y_pred_list[0]}, 200)
         except pd.errors.ParserError as e:
-            return make_response({"error": f"Error parsing CSV data: {str(e)}"}, 400)
+            return make_response({"error": f"Error parsing CSV data: {str(e)}"}, 406)
 
 
 api.add_resource(PredictionFileUpload, '/prediction/multiple-data')
@@ -358,7 +358,7 @@ class PredictionInput(Resource):
         # Ensure that the input data keys match the columns in "highly_correlated_columns.txt"
         for column in actual_columns:
             if column not in input_data:
-                return make_response({"error": f"Input data missing for column: {column}"}, 400)
+                return make_response({"error": f"Input data missing for column: {column}"}, 500)
 
         # Create a DataFrame with input values
         input_data_df = pd.DataFrame([input_data])

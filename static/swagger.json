@@ -293,9 +293,16 @@
             }
           },
           "404": {
-            "description": "Model file not found, Please train the model!"
+            "description": "Not Found",
+            "content":{
+              "application/json":{
+                "example":{
+                  "error":"Model file not found, Please train the model!"
+                }
+              }
+            }
           },
-          "NoFileUploadedError": {
+          "400": {
             "description": "Bad Request",
             "content": {
               "application/json": {
@@ -305,8 +312,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad Request",
+          "406": {
+            "description": "Not Acceptable",
             "content": {
               "application/json": {
                 "example": {
@@ -329,6 +336,7 @@
           "content": {
             "application/json": {
               "schema": {
+                "type":"object",
                 "properties": {
                   "Tuition fees up to date": {
                     "type": "number"
@@ -372,25 +380,32 @@
               }
             }
           },
-          "404": {
-            "description": "Model file not found, Please train the model!"
-          },
-          "NoFileUploadedError": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "example": {
-                  "error": "No file was uploaded."
-                }
-              }
-            }
-          },
           "400": {
             "description": "Bad Request",
             "content": {
               "application/json": {
                 "example": {
-                  "error": "Error parsing CSV data:{describe error}"
+                  "error": "No input data provided in the request body"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Model file not found, Please train the model!"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Input data missing for column: {column_name}"
                 }
               }
             }
