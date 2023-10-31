@@ -1,4 +1,4 @@
-from flask import Flask, request, make_response
+from flask import Flask, request, make_response, jsonify
 from flask_restful import Resource, Api
 import pandas as pd
 import time
@@ -108,16 +108,21 @@ class DistributionGraph(Resource):
     def get(self):
         global csv_data
         csv_data = fetch_data_from_postgresql()
-        csv_data = csv_data.iloc[:-1]
-        csv_data = csv_data.drop('student_id', axis=1)
-        label_mapping = {
-            'Dropout': 0,
-            'Graduate': 1,
-            'Enrolled': 2
-        }
-        csv_data['target'] = csv_data['target'].map(label_mapping)
         try:
-            if csv_data is not None:
+            if csv_data is None:
+                # 403 Forbidden
+                return make_response({"error": "No data available"}, 403)
+                # If no CSV data is available,  return a 403 Forbidden Error status code
+            else:
+                # fetch_data_from_postgresql()
+                csv_data = csv_data.iloc[:-1]
+                csv_data = csv_data.drop('student_id', axis=1)
+                label_mapping = {
+                    'Dropout': 0,
+                    'Graduate': 1,
+                    'Enrolled': 2
+                }
+                csv_data['target'] = csv_data['target'].map(label_mapping)
                 # Your distribution graph logic here
                 num_columns = len(csv_data.columns)
                 num_rows = (num_columns + 4) // 5
@@ -153,12 +158,9 @@ class DistributionGraph(Resource):
                     # 404 Not Found
                     return make_response({"error": "Distribution graph not found"}, 404)
 
-            # If no CSV data is available,  return a 403 Forbidden Error status code
-            else:
-                # 403 Forbidden
-                return make_response({"error": "No data available"}, 403)
         except Exception as e:
-            return make_response({"error": f"An error occurred: {str(e)}"}, 500)
+            error_message = f"An error occurred: {str(e)}"
+            return jsonify({"error": error_message})
 
 
 api.add_resource(DistributionGraph, '/distribution-graph')
@@ -166,78 +168,83 @@ api.add_resource(DistributionGraph, '/distribution-graph')
 
 # correlation graph page
 class CorrelationGraph(Resource):
-    def post(self):
-        global actual_columns, selected_column
-        selected_column = request.args.get("selected_column")
-        if not selected_column:
-            error = 'No target column was selected'
-            return {"error": error}
-
-        if selected_column:
-            correlation_with_Target = csv_data.corr()[selected_column]
-            correlation_with_Target = correlation_with_Target.drop(
-                selected_column)
-            correlation_with_Target_sorted = correlation_with_Target.sort_values(
-                ascending=False)
-
-            # Plot the histogram
-            plt.figure(figsize=(10, 6))
-            bars = plt.bar(correlation_with_Target_sorted.index,
-                           correlation_with_Target_sorted.values)
-            plt.xlabel('Columns')
-            plt.ylabel(f'Correlation with {selected_column} ')
-            plt.title(f'Correlation of {selected_column} with Other Columns')
-            plt.xticks(rotation=90)
-            plt.ylim(-1, 1)
-
-            for i, bar in enumerate(bars):
-                col_name = correlation_with_Target_sorted.index[i]
-                col_correlation = bar.get_height()
-
-                correlation_more_than_0_2 = [
-                    col for col in correlation_with_Target_sorted.index
-                    if correlation_with_Target_sorted[col] > 0.2
-                ]
-                correlation_less_than_minus_0_2 = [
-                    col for col in correlation_with_Target_sorted.index
-                    if -0.2 > correlation_with_Target_sorted[col]
-                ]
-                correlation_minus_0_2_to_0_2 = [
-                    col for col in correlation_with_Target_sorted.index
-                    if -0.2 <= correlation_with_Target_sorted[col] <= 0.2
-                ]
-
-            plt.grid(axis='y')
-            png_path = 'static/images/correlation_graph.png'
-            plt.savefig(png_path, bbox_inches='tight')
-            drop_columns = correlation_minus_0_2_to_0_2
-            col_cor = correlation_more_than_0_2 + correlation_less_than_minus_0_2
-            drop_columns.append(selected_column)
-            actual_columns = csv_data.columns.drop(drop_columns)
-            # save selected column in a file
-            with open("target_column.txt", "w") as file:
-                file.write("\n".join(selected_column))
-            # save actual columns in a file
-            with open("highly_correlated_columns.txt", "w") as file:
-                file.write("\n".join(actual_columns))
-            if os.path.exists(png_path):
-                return make_response({"message": "Correlation graph generated", "png_path": png_path}, 200)
+    def get(self, selected_column):
+        global actual_columns
+        try:
+            if not selected_column:
+                return make_response({"error": 'No target column was selected'}, 400)
             else:
-                # 404 Not Found
-                return make_response({"error": "Correlation graph not found"}, 404)
+                correlation_with_Target = csv_data.corr()[selected_column]
+                correlation_with_Target = correlation_with_Target.drop(
+                    selected_column)
+                correlation_with_Target_sorted = correlation_with_Target.sort_values(
+                    ascending=False)
+
+                # Plot the histogram
+                plt.figure(figsize=(10, 6))
+                bars = plt.bar(correlation_with_Target_sorted.index,
+                               correlation_with_Target_sorted.values)
+                plt.xlabel('Columns')
+                plt.ylabel(f'Correlation with {selected_column} ')
+                plt.title(
+                    f'Correlation of {selected_column} with Other Columns')
+                plt.xticks(rotation=90)
+                plt.ylim(-1, 1)
+
+                for i, bar in enumerate(bars):
+                    col_name = correlation_with_Target_sorted.index[i]
+                    col_correlation = bar.get_height()
+
+                    correlation_more_than_0_2 = [
+                        col for col in correlation_with_Target_sorted.index
+                        if correlation_with_Target_sorted[col] > 0.2
+                    ]
+                    correlation_less_than_minus_0_2 = [
+                        col for col in correlation_with_Target_sorted.index
+                        if -0.2 > correlation_with_Target_sorted[col]
+                    ]
+                    correlation_minus_0_2_to_0_2 = [
+                        col for col in correlation_with_Target_sorted.index
+                        if -0.2 <= correlation_with_Target_sorted[col] <= 0.2
+                    ]
+
+                plt.grid(axis='y')
+                png_path = 'static/images/correlation_graph.png'
+                plt.savefig(png_path, bbox_inches='tight')
+                drop_columns = correlation_minus_0_2_to_0_2
+                col_cor = correlation_more_than_0_2 + correlation_less_than_minus_0_2
+                drop_columns.append(selected_column)
+                actual_columns = csv_data.columns.drop(drop_columns)
+                # save selected column in a file
+                with open("target_column.txt", "w") as file:
+                    file.write("\n".join(selected_column))
+                # save actual columns in a file
+                with open("highly_correlated_columns.txt", "w") as file:
+                    file.write("\n".join(actual_columns))
+                if os.path.exists(png_path):
+                    return make_response({"message": "Correlation graph generated", "png_path": png_path}, 200)
+                else:
+                    # 404 Not Found
+                    return make_response({"error": "Correlation graph not found"}, 404)
+        except Exception as e:
+            return make_response({"error": f"An error occurred: {str(e)}"}, 500)
 
 
-api.add_resource(CorrelationGraph, '/correlation-graph')
+api.add_resource(CorrelationGraph,
+                 '/correlation-graph/<string:selected_column>')
 
 
 # Train the data
 class TrainingModel(Resource):
     def get(self):
-        with open("highly_correlated_columns.txt", "r") as file:
-            actual_columns = file.read().splitlines()
-        with open("target_column.txt", "r") as file:
-            lines = file.readlines()
-            selected_column = ''.join(line.strip() for line in lines)
+        try:
+            with open("highly_correlated_columns.txt", "r") as file:
+                actual_columns = file.read().splitlines()
+            with open("target_column.txt", "r") as file:
+                lines = file.readlines()
+                selected_column = ''.join(line.strip() for line in lines)
+        except FileNotFoundError as e:
+            return make_response({"error": f"File not found: {e.filename}"}, 404)
         X = csv_data[actual_columns]
         y = csv_data[selected_column]
         # Perform cross-validation
@@ -282,7 +289,7 @@ class TrainingModel(Resource):
             conn.commit()
         except Exception as e:
             conn.rollback()
-            return make_response({"error": f"Failed to save training results to the database {e}"}, 500)
+            return make_response({"error": f"Failed to save training results to the database: {e}"}, 500)
         finally:
             cursor.close()
             conn.close()
@@ -302,8 +309,7 @@ class PredictionFileUpload(Resource):
             with open('mpl_model.pkl', 'rb') as file:
                 model_pkl = pkl.load(file)
         except FileNotFoundError:
-            error = 'Model file not found, Please train the model!'
-            return make_response({'error': error}, 404)
+            return make_response({'error': 'Model file not found, Please train the model!'}, 404)
 
         df = request.get_data()
         if not df:
@@ -324,7 +330,7 @@ class PredictionFileUpload(Resource):
 
             return make_response({"message": "Prediction completed successfully", 'result': y_pred_list[0]}, 200)
         except pd.errors.ParserError as e:
-            return make_response({"error": f"Error parsing CSV data: {str(e)}"}, 400)
+            return make_response({"error": f"Error parsing CSV data: {str(e)}"}, 406)
 
 
 api.add_resource(PredictionFileUpload, '/prediction/multiple-data')
@@ -352,7 +358,7 @@ class PredictionInput(Resource):
         # Ensure that the input data keys match the columns in "highly_correlated_columns.txt"
         for column in actual_columns:
             if column not in input_data:
-                return make_response({"error": f"Input data missing for column: {column}"}, 400)
+                return make_response({"error": f"Input data missing for column: {column}"}, 500)
 
         # Create a DataFrame with input values
         input_data_df = pd.DataFrame([input_data])
