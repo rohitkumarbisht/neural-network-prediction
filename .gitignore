@@ -4,3 +4,4 @@
 *.txt
 !requirements.txt
 *.png
+*.pyc
