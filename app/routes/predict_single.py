@@ -35,10 +35,10 @@ class PredictionInput(Resource):
                 data_type = column_data_types[column]
                 # Dynamically cast the column to the appropriate data type
                 if data_type == 'integer':
-                    dataframe[column] = AsIs(dataframe[column])
-                    dataframe[column] = register_adapter(np.int64, dataframe[column])
+                    register_adapter(np.int64, AsIs)
+                    dataframe[column] = dataframe[column].astype(np.int64)
                 elif data_type == 'real':
-                    dataframe[column] = float(dataframe[column])
+                    dataframe[column] = dataframe[column].astype(float)
                 elif data_type == 'character varying':
                     dataframe[column] = dataframe[column].astype(str)
         return dataframe
@@ -82,8 +82,9 @@ class PredictionInput(Resource):
         # Ensure that the input data keys match the columns in "highly_correlated_columns.txt"
         with open("highly_correlated_columns.txt", "r") as file:
             actual_columns = file.read().splitlines()
-            missing_columns = [
-                column for column in actual_columns if column not in input_data]
+
+        missing_columns = [
+            column for column in actual_columns if column not in input_data]
 
         if missing_columns:
             return make_response({"error": f"Input data missing for column:{', '.join(missing_columns)}"}, 500)
