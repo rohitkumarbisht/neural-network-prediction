@@ -60,12 +60,8 @@ class PredictionInput(Resource):
                     sql = f"""INSERT INTO {config.db_name}.{config.schema_name}.{config.table_name} ({cols_required}) VALUES ({val_type});"""
                     cursor.execute(sql, val_tuple)
             conn.commit()
-            cursor.close()
-            conn.close()
             return 'Data saved to the database successfully'
         except Exception as e:
-            conn.rollback()
-            cursor.close
             return f"Failed to save training results to the database: {e}"
 
     def post(self):
