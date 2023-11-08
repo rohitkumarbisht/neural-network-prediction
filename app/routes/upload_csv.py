@@ -28,6 +28,6 @@ class UploadCSV(Resource):
             label_mapping = {'Dropout': 0, 'Graduate': 1, 'Enrolled': 2}
             uploaded_csv['Target'] = uploaded_csv['Target'].map(label_mapping)
             self.uploaded_data = uploaded_csv
-            return make_response({"message": "CSV data uploaded successfully"}, 201)
+            return make_response({"message": "CSV data uploaded successfully"}, 200)
         except pd.errors.ParserError as e:
-            return make_response({"error": f"Error parsing CSV data: {str(e)}"}, 400)
+            return make_response({"error": f"Error parsing CSV data: {str(e)}"}, 422)

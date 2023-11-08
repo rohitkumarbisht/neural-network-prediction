@@ -1,7 +1,7 @@
 from flask import request, make_response
 from flask_restful import Resource
 from psycopg2.extensions import AsIs,register_adapter
-import pickle as pkl
+from app.utils.file_open import read_file, open_model
 import pandas as pd
 import numpy as np
 import json
@@ -67,11 +67,9 @@ class PredictionInput(Resource):
     def post(self):
         # Load the model
         try:
-            with open('mpl_model.pkl', 'rb') as file:
-                model_pkl = pkl.load(file)
+            model_pkl = open_model('mpl_model.pkl', 'rb')
         except FileNotFoundError:
-            error = 'Model file not found, Please train the model!'
-            return make_response({'error': error}, 404)
+            return make_response({'error': 'Model file not found, Please train the model!'}, 404)
 
         # Read input values from the request body as JSON
         input_data = request.get_json()
@@ -79,9 +77,7 @@ class PredictionInput(Resource):
         if input_data is None:
             return make_response({"error": "No input data provided in the request body"}, 400)
 
-        # Ensure that the input data keys match the columns in "highly_correlated_columns.txt"
-        with open("highly_correlated_columns.txt", "r") as file:
-            actual_columns = file.read().splitlines()
+        actual_columns = read_file("highly_correlated_columns.txt", "r")
 
         missing_columns = [
             column for column in actual_columns if column not in input_data]
@@ -95,7 +91,7 @@ class PredictionInput(Resource):
         # Predict using the model
         y_pred = model_pkl.predict(pred_X)
         if len(y_pred) == 0:
-            return make_response({"error": "Prediction failed"}, 500)
+            return make_response({"error": "Prediction failed as data can't be processed"},422)
 
         # Convert y_pred values to labels
         y_pred_labels = ['Dropout' if x == 0 else (

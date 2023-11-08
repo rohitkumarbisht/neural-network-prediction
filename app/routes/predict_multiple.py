@@ -1,7 +1,7 @@
 from flask import request, make_response
 from flask_restful import Resource
 from psycopg2.extensions import AsIs, register_adapter
-import pickle as pkl
+from app.utils.file_open import read_file, open_model
 import io
 import pandas as pd
 import numpy as np
@@ -72,8 +72,7 @@ class PredictionFileUpload(Resource):
 
     def post(self):
         try:
-            with open('mpl_model.pkl', 'rb') as file:
-                model_pkl = pkl.load(file)
+            model_pkl = open_model('mpl_model.pkl', 'rb')
         except FileNotFoundError:
             return make_response({'error': 'Model file not found, Please train the model!'}, 404)
 
@@ -84,8 +83,7 @@ class PredictionFileUpload(Resource):
             binary_io = io.BytesIO(data)
             df = pd.read_csv(binary_io)
 
-            with open("highly_correlated_columns.txt", "r") as file:
-                actual_columns = file.read().splitlines()
+            actual_columns = read_file("highly_correlated_columns.txt", "r")
 
             pred_X = df[actual_columns]
             y_pred = model_pkl.predict(pred_X)
@@ -106,4 +104,4 @@ class PredictionFileUpload(Resource):
 
             return make_response(result_json, 200, {"Content-Type": "application/json"})
         except pd.errors.ParserError as e:
-            return make_response({"error": f"Error parsing CSV data: {str(e)}"}, 406)
+            return make_response({"error": f"Error parsing CSV data: {str(e)}"}, 422)

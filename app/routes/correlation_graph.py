@@ -1,8 +1,9 @@
-from flask import request, make_response
+from flask import make_response
 from flask_restful import Resource
 import matplotlib.pyplot as plt
 import os
 from app.routes.distribution_graph import DistributionGraph
+from app.utils.file_open import save_file, save_image
 
 class CorrelationGraph(Resource):
     def calculate_correlation(self, selected_column):
@@ -14,25 +15,19 @@ class CorrelationGraph(Resource):
         return correlation_with_Target.sort_values(ascending=False)
 
     def generate_correlation_graph(self, correlation_data, selected_column):
-        # Plot the histogram
-        plt.figure(figsize=(10, 6))
-        bars = plt.bar(correlation_data.index, correlation_data.values)
-        plt.xlabel('Columns')
-        plt.ylabel(f'Correlation with {selected_column} ')
-        plt.title(
-            f'Correlation of {selected_column} with Other Columns')
-        plt.xticks(rotation=90)
-        plt.ylim(-1, 1)
-        plt.grid(axis='y')
-
-    def save_correlation_image(self):
-        # Ensure the directories exist
-        if not os.path.exists("static/images"):
-            os.makedirs("static/images")
-        # Save the image with an absolute path
-        png_path = os.path.abspath('static/images/correlation_graph.png')
-        plt.savefig(png_path, bbox_inches='tight')
-        return png_path
+        try:
+            # Plot the histogram
+            plt.figure(figsize=(10, 6))
+            plt.bar(correlation_data.index, correlation_data.values)
+            plt.xlabel('Columns')
+            plt.ylabel(f'Correlation with {selected_column} ')
+            plt.title(
+                f'Correlation of {selected_column} with Other Columns')
+            plt.xticks(rotation=90)
+            plt.ylim(-1, 1)
+            plt.grid(axis='y')
+        except Exception as e:
+            return e
 
     def find_highly_correlated_columns(self, correlation_data, lower_threshold=-0.2, upper_threshold=0.2):
         return [col for col in correlation_data.index if not (lower_threshold <= correlation_data[col] <= upper_threshold)]
@@ -53,15 +48,15 @@ class CorrelationGraph(Resource):
                 self.generate_correlation_graph(
                     correlation_data, selected_column)
                 # Save the image
-                png_path = self.save_correlation_image()
+                png_path = save_image("correlation_graph.png")
                 # find highly correlated columns
                 highly_correlated = self.find_highly_correlated_columns(
                     correlation_data)
                 # save highly correlated columns to a text file
-                self.open_file(highly_correlated,
+                save_file(highly_correlated,
                                "highly_correlated_columns.txt", "w")
                 # save target column to a text file
-                self.open_file(selected_column, "target_column.txt", "w")
+                save_file(selected_column, "target_column.txt", "w")
 
             if os.path.exists(png_path):
                 return make_response({"message": "Correlation graph generated", "png_path": png_path}, 200)

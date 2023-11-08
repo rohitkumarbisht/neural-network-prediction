@@ -3,12 +3,12 @@ from flask_restful import Resource
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 import contextlib
-import pickle as pkl
 import config
 import psycopg2
 import time
 from datetime import date
 from app.routes.distribution_graph import DistributionGraph
+from app.utils.file_open import read_file, open_model
 
 class TrainingModel(Resource):
     @contextlib.contextmanager
@@ -23,10 +23,6 @@ class TrainingModel(Resource):
         MPL_model = MLPClassifier(max_iter=20)
         MPL_model.fit(X, y)
         return MPL_model
-
-    def save_model_to_pkl_file(self, model, filename):
-        with open(filename, 'wb') as file:
-            pkl.dump(model, file)
 
     def save_training_results_to_database(self, accuracy, precision, training_time, date_modified):
         try:
@@ -44,15 +40,11 @@ class TrainingModel(Resource):
     def post(self):
         csv_data_instance = DistributionGraph()
         csv_data = csv_data_instance.fetch_csv_data()
-        with self.open_file("highly_correlated_columns.txt", "r") as file:
-            actual_columns = file.read().splitlines()
+        actual_columns = read_file("highly_correlated_columns.txt", "r")
         if isinstance(actual_columns, Response):
             return actual_columns
 
-        with self.open_file("target_column.txt", "r") as file:
-            lines = file.readlines()
-            selected_column = ''.join(line.strip() for line in lines)
-
+        selected_column = read_file("target_column.txt", "r")
         if isinstance(selected_column, Response):
             return selected_column
 
@@ -75,7 +67,7 @@ class TrainingModel(Resource):
         today = date.today()
         modified_on = today.isoformat()
         # Save the model to file
-        self.save_model_to_pkl_file(MPL_model, 'mpl_model.pkl')
+        open_model('mpl_model.pkl','wb',MPL_model)
         # save training results to database
         result = self.save_training_results_to_database(
             accuracy, precision, training_time, modified_on)
