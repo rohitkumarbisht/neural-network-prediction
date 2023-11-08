@@ -48,8 +48,8 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "CSV data uploaded successfully",
+          "200": {
+            "description": "OK Success",
             "content": {
               "application/json": {
                 "example": {
@@ -67,6 +67,16 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Error parsing CSV data: error descriprtion"
+                }
+              }
+            }
           }
         }
       }
@@ -79,7 +89,7 @@
         "summary": "Get distribution graph",
         "responses": {
           "200": {
-            "description": "Distribution graph generated",
+            "description": "OK Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -121,7 +131,7 @@
             "content": {
               "application/json": {
                 "example": {
-                  "error": "An error occurred: error description"
+                  "error": "Error fetching data from PostgreSQL: error description"
                 }
               }
             }
@@ -148,7 +158,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Correlation graph generated",
+            "description": "OK Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -206,7 +216,7 @@
         "summary": "Get training parameters",
         "responses": {
           "200": {
-            "description": "Model training completed successfully",
+            "description": "OK Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -275,7 +285,7 @@
         },
         "responses": {
           "200": {
-            "description": "Prediction completed successfully",
+            "description": "OK Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -312,8 +322,8 @@
               }
             }
           },
-          "406": {
-            "description": "Not Acceptable",
+          "422": {
+            "description": "Unprocessable Entity",
             "content": {
               "application/json": {
                 "example": {
@@ -363,7 +373,7 @@
         },
         "responses": {
           "200": {
-            "description": "Prediction completed successfully",
+            "description": "OK Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -406,6 +416,16 @@
               "application/json": {
                 "example": {
                   "error": "Input data missing for column: {column_name}"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": "Prediction failed as data can't be processed"
                 }
               }
             }
