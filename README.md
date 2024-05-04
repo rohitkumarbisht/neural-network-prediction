@@ -12,3 +12,6 @@ python app.py
 
 # If any new package is installed use the following commanf to save that in requirements.txt
 pip freeze > requirements.txt
+
+##ABOUT:
+The project focus on training the neural network based model with appropriate data and predicting the chances of a student's dropout based on various relevant parameters.
